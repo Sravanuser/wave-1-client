@@ -24,7 +24,7 @@ const getSubjectsBySite = async (siteId) => {
 };
 
 const createSubject = async (data) => {
-  const res = await fetch(`${API_URL}/api/subjects`, {
+  const res = await fetch(`${API_URL}/subjects`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
