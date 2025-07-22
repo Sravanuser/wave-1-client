@@ -4,58 +4,58 @@ import {
   Typography,
   Paper,
   Button,
-  IconButton,
-  InputBase,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
-  TextField
+  TextField,
+  CircularProgress
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
-import SearchIcon from '@mui/icons-material/Search';
-import FilterListIcon from '@mui/icons-material/FilterList';
-import { useParams } from 'react-router-dom';
-import { useNavigate } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 
-// Modal Component
-const CreateSubjectModal = ({ open, onClose, onCreate, siteId }) => {
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    site: siteId
+const API_URL = import.meta.env.VITE_API_URL;
+
+// API Functions
+const getSubjectsBySite = async (siteId) => {
+  const res = await fetch(`${API_URL}/subjects/${siteId}`);
+  if (!res.ok) throw new Error("Failed to fetch subjects");
+  return res.json();
+};
+
+const createSubject = async (data) => {
+  const res = await fetch(`${API_URL}/api/subjects`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
   });
 
-  useEffect(() => {
-    setFormData(prev => ({ ...prev, site: siteId }));
-  }, [siteId]);
+  const responseData = await res.json();
+  if (!res.ok) throw new Error(responseData.message || "Create subject failed");
+
+  return responseData.subject;
+};
+
+// Modal Component
+const CreateSubjectModal = ({ open, onClose, siteId, onSuccess }) => {
+  const [form, setForm] = useState({ name: '', email: '' });
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = async () => {
+  const handleCreate = async () => {
     try {
-      const apiUrl = import.meta.env.VITE_API_URL;
-      const response = await fetch(`${apiUrl}/api/subjects`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
-      });
-
-      const data = await response.json();
-      if (response.ok) {
-        alert('Subject created successfully!');
-        onCreate(data.subject);
-        setFormData({ name: '', email: '', site: siteId });
-        onClose();
-      } else {
-        alert(data.message || 'Failed to create subject.');
-      }
-    } catch (error) {
-      console.error('Server error:', error);
-      alert('Server error.');
+      setLoading(true);
+      const subject = await createSubject({ ...form, site: siteId });
+      onSuccess(subject);
+      onClose();
+      setForm({ name: '', email: '' });
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -67,46 +67,49 @@ const CreateSubjectModal = ({ open, onClose, onCreate, siteId }) => {
           <TextField
             label="Name"
             name="name"
-            value={formData.name}
+            value={form.name}
             onChange={handleChange}
+            fullWidth
             required
           />
           <TextField
             label="Email"
             name="email"
             type="email"
-            value={formData.email}
+            value={form.email}
             onChange={handleChange}
+            fullWidth
             required
           />
         </Box>
       </DialogContent>
-      <DialogActions sx={{ px: 3, pb: 2 }}>
-        <Button onClick={onClose}>Cancel</Button>
-        <Button variant="contained" onClick={handleSubmit}>Create</Button>
+      <DialogActions>
+        <Button onClick={onClose} disabled={loading}>Cancel</Button>
+        <Button variant="contained" onClick={handleCreate} disabled={loading}>
+          {loading ? 'Creating...' : 'Create'}
+        </Button>
       </DialogActions>
     </Dialog>
   );
 };
 
-// Subjects Page
+// Main Page
 const Subjects = () => {
   const { sitesId } = useParams();
-  const [subjects, setSubjects] = useState([]);
-  const [modalOpen, setModalOpen] = useState(false);
   const navigate = useNavigate();
+
+  const [subjects, setSubjects] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [modalOpen, setModalOpen] = useState(false);
+
   const fetchSubjects = async () => {
     try {
-      const res = await fetch(`http://localhost:5000/api/subjects/${sitesId}`);
-      const data = await res.json();
-      if (Array.isArray(data)) {
-        setSubjects(data);
-      } else {
-        console.warn('Subjects fetch did not return an array:', data);
-        setSubjects([]);
-      }
+      const data = await getSubjectsBySite(sitesId);
+      setSubjects(data);
     } catch (err) {
-      console.error('Failed to fetch subjects:', err);
+      alert("Failed to load subjects");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -115,68 +118,47 @@ const Subjects = () => {
   }, [sitesId]);
 
   const handleSubjectCreated = (newSubject) => {
-    setSubjects(prev => Array.isArray(prev) ? [...prev, newSubject] : [newSubject]);
+    setSubjects((prev) => [...prev, newSubject]);
   };
 
   return (
     <Box p={3}>
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
         <Typography variant="h5">Subjects</Typography>
-        <Box display="flex" gap={1}>
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={() => setModalOpen(true)}
-          >
-            New Subject
-          </Button>
-          <Button variant="outlined" startIcon={<FilterListIcon />}>
-            Filters
-          </Button>
-        </Box>
+        <Button variant="contained" startIcon={<AddIcon />} onClick={() => setModalOpen(true)}>
+          New Subject
+        </Button>
       </Box>
 
       <CreateSubjectModal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
-        onCreate={handleSubjectCreated}
         siteId={sitesId}
+        onSuccess={handleSubjectCreated}
       />
 
-      <Box display="flex" alignItems="center" gap={2} mb={2}>
-        <Paper
-          component="form"
-          sx={{ p: '2px 8px', display: 'flex', alignItems: 'center', width: 250 }}
-        >
-          <SearchIcon sx={{ color: 'gray' }} />
-          <InputBase placeholder="Search" sx={{ ml: 1, flex: 1 }} />
-        </Paper>
-      </Box>
-
-      {subjects.length > 0 ? (
+      {loading ? (
+        <Box display="flex" justifyContent="center" mt={5}>
+          <CircularProgress />
+        </Box>
+      ) : subjects.length === 0 ? (
+        <Typography>No subjects found.</Typography>
+      ) : (
         subjects.map((subject) => (
           <Paper
             key={subject._id}
             sx={{
               mb: 2,
-              px: 2,
-              py: 1.5,
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center'
+              p: 2,
+              cursor: 'pointer',
+              '&:hover': { backgroundColor: '#f5f5f5' }
             }}
             onClick={() => navigate(`/forms/${subject._id}`)}
           >
-            <Box>
-              <Typography fontWeight="bold">{subject.name}</Typography>
-              <Typography variant="body2" color="text.secondary">
-                ID: {subject.id} • Email: {subject.email}
-              </Typography>
-            </Box>
+            <Typography fontWeight="bold">{subject.name}</Typography>
+            <Typography variant="body2">Email: {subject.email}</Typography>
           </Paper>
         ))
-      ) : (
-        <Typography>No subjects found.</Typography>
       )}
     </Box>
   );

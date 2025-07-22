@@ -32,7 +32,7 @@ const CreateSiteModal = ({ open, onClose, onCreate, studyId }) => {
     const handleSubmit = async () => {
         try {
             const apiUrl = import.meta.env.VITE_API_URL;
-            const response = await fetch(`${apiUrl}/api/sites`, {
+            const response = await fetch(`${apiUrl}/sites`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'

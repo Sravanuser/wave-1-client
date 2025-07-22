@@ -25,7 +25,7 @@ const Studies = () => {
     const fetchStudies = async () => {
         const apiUrl = import.meta.env.VITE_API_URL;
       try {
-        const response = await fetch(`${apiUrl}/api/studies/getstudy`)
+        const response = await fetch(`${apiUrl}/studies/getstudy`)
         const data = await response.json()
         setStudies(data)
         console.log('Studies fetched:', data)

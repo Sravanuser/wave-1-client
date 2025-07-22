@@ -25,7 +25,7 @@ const Sites = () => {
   useEffect(() => {
     const fetchSites = async () => {
       const apiUrl = import.meta.env.VITE_API_URL;
-      const response = await fetch(`${apiUrl}/api/sites/${studyId}`);
+      const response = await fetch(`${apiUrl}/sites/${studyId}`);
       const data = await response.json();
       setSites(data);
     };

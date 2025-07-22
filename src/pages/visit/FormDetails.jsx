@@ -67,7 +67,7 @@ export default function Forms() {
             setSuccessMessage('');
             setErrorMessage('');
             const apiUrl = import.meta.env.VITE_API_URL;
-            const response = await fetch(`${apiUrl}/api/screenings`, {
+            const response = await fetch(`${apiUrl}/screenings`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ ...formValues, subjectId }),
