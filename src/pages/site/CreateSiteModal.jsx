@@ -50,7 +50,6 @@ const CreateSiteModal = ({ open, onClose, onCreate, studyId }) => {
                 alert(data.message || 'Failed to create site.');
             }
         } catch (err) {
-            console.error('Server error:', err);
             alert('Server error.');
         }
     };

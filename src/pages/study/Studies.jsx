@@ -23,19 +23,31 @@ const Studies = () => {
 
   useEffect(() => {
     const fetchStudies = async () => {
-        const apiUrl = import.meta.env.VITE_API_URL;
+      const apiUrl = import.meta.env.VITE_API_URL;
+      const token = JSON.parse(localStorage.getItem("userData"))?.token; // or data.token based on your API response
       try {
-        const response = await fetch(`${apiUrl}/studies/getstudy`)
-        const data = await response.json()
-        setStudies(data)
-        console.log('Studies fetched:', data)
-      } catch (error) {
-        console.error('Failed to fetch studies:', error)
-      }
-    }
+        const response = await fetch(`${apiUrl}/studies/getstudy`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`, // Pass token
+          },
+        });
 
-    fetchStudies()
-  }, [])
+        if (!response.ok) {
+          throw new Error(`Failed to fetch studies: ${response.status}`);
+        }
+
+        const data = await response.json();
+        setStudies(data);
+      } catch (error) {
+        console.error("Failed to fetch studies:", error);
+      }
+    };
+
+    fetchStudies();
+  }, []);
+
 
   return (
     <Box p={3}>
@@ -132,7 +144,7 @@ const Studies = () => {
             borderBottom: '1px solid #eee',
             maxWidth: 1200,
           }}
-           onClick={() => navigate(`/sites/${study._id}`)}
+          onClick={() => navigate(`/sites/${study._id}`)}
         >
           <Box display="flex" alignItems="center" gap={2}>
             <Typography variant="body2" sx={{ color: '#666' }}>

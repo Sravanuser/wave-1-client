@@ -36,26 +36,31 @@ const CreateStudy = () => {
   const handleSubmit = async () => {
     try {
       const apiUrl = import.meta.env.VITE_API_URL;
+
+      // Get token from localStorage
+      const token = JSON.parse(localStorage.getItem("userData"))?.token;
+
       const response = await fetch(`${apiUrl}/studies`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`, // Pass token here
         },
         body: JSON.stringify(formData),
       });
 
       const data = await response.json();
       if (response.ok) {
-        alert('Study created successfully!');
-        navigate('/studies');
+        alert("Study created successfully!");
+        navigate("/studies");
       } else {
-        alert(data.message || 'Error creating study.');
+        alert(data.message || "Error creating study.");
       }
     } catch (err) {
-      console.error('Error:', err);
-      alert('getting Server error from here.');
+      alert("Getting Server error from here.");
     }
   };
+
   return (
     <Box p={4} maxWidth={800} mx="auto">
       <Box display="flex" alignItems="center" mb={2}>
