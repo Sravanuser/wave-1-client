@@ -14,6 +14,7 @@ import {
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 
 const CreateStudy = () => {
   const navigate = useNavigate();
@@ -51,13 +52,13 @@ const CreateStudy = () => {
 
       const data = await response.json();
       if (response.ok) {
-        alert("Study created successfully!");
+        toast.success("Study created successfully!");
         navigate("/studies");
       } else {
-        alert(data.message || "Error creating study.");
+        toast.error(data.message || "Error creating study.");
       }
     } catch (err) {
-      alert("Getting Server error from here.");
+      toast.error("Getting Server error from here.");
     }
   };
 

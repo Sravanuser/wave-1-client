@@ -10,14 +10,15 @@ import {
     Link,
     TextField,
     Typography,
-    Stack,
-    Alert,
+    Stack
 } from "@mui/material";
+import toast from "react-hot-toast";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
+import { useEffect } from "react";
 
 export default function Register() {
     const {
@@ -32,6 +33,12 @@ export default function Register() {
     const [showPassword, setShowPassword] = React.useState(false);
     const [showConfirm, setShowConfirm] = React.useState(false);
     const password = watch("password");
+
+    useEffect(() => {
+        if (errors.root?.message) {
+            toast.error(errors.root.message);
+        }
+    }, [errors.root?.message]);
 
     const onSubmit = async ({ username, email, password }) => {
         try {
@@ -60,7 +67,7 @@ export default function Register() {
             }
 
             // Success – do whatever you want (redirect, toast, etc.)
-            alert("Account created! You can log in now.");
+            toast.success("Account created! You can log in now.");
             reset();
             Navigate("/")
         } catch (err) {
@@ -91,10 +98,6 @@ export default function Register() {
 
                 <Box component="form" onSubmit={handleSubmit(onSubmit)} sx={{ width: "100%" }}>
                     <Stack spacing={2}>
-                        {errors.root?.message && (
-                            <Alert severity="error">{errors.root.message}</Alert>
-                        )}
-
                         <TextField
                             fullWidth
                             placeholder="Username"

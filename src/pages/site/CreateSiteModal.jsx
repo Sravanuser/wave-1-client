@@ -8,6 +8,7 @@ import {
     Button,
     Box
 } from '@mui/material';
+import toast from 'react-hot-toast';
 
 const CreateSiteModal = ({ open, onClose, onCreate, studyId }) => {
     const [formData, setFormData] = useState({
@@ -42,15 +43,15 @@ const CreateSiteModal = ({ open, onClose, onCreate, studyId }) => {
 
             const data = await response.json();
             if (response.ok) {
-                alert('Site created successfully!');
+                toast.success('Site created successfully!');
                 setFormData({ siteName: '', location: '', contactEmail: '', studyId });
                 onClose();
                 onCreate?.(data); // optional callback
             } else {
-                alert(data.message || 'Failed to create site.');
+                toast.error(data.message || 'Failed to create site.');
             }
         } catch (err) {
-            alert('Server error.');
+            toast.error('Server error.');
         }
     };
 

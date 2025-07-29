@@ -11,14 +11,14 @@ import {
     TextField,
     Typography,
     Stack,
-    Alert,
 } from "@mui/material";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import toast from "react-hot-toast";
 import { useAuth } from "../../context/AuthContext";
 
 export default function Login() {
@@ -32,6 +32,12 @@ export default function Login() {
     const navigate = useNavigate();
     const [showPassword, setShowPassword] = React.useState(false);
     const [serverError, setServerError] = React.useState("");
+   
+    useEffect(() => {
+        if (serverError) {
+            toast.error(serverError);
+        }
+    }, [serverError]);
 
     const onSubmit = async ({ email, password }) => {
         setServerError("");
@@ -56,6 +62,7 @@ export default function Login() {
             if (data.user) {
                 localStorage.setItem("userData", JSON.stringify(data));
                 setUser(data); // Update state
+                toast.success("Login successful!");
             }
 
             // Redirect after state update
@@ -87,8 +94,6 @@ export default function Login() {
 
                 <Box component="form" onSubmit={handleSubmit(onSubmit)} sx={{ width: "100%" }}>
                     <Stack spacing={2}>
-                        {serverError && <Alert severity="error">{serverError}</Alert>}
-
                         <TextField
                             fullWidth
                             placeholder="Email Address"

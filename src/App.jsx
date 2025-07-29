@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Box } from '@mui/material';
+import { Toaster } from 'react-hot-toast'; // ✅ Add this
 import './App.css';
 
 import Register from './pages/auth/Register';
@@ -14,7 +15,8 @@ import Forms from './pages/visit/FormDetails';
 import { useAuth } from './context/AuthContext';
 
 function AppRoutes() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated,loading } = useAuth();
+  if (loading) return null;
   return (
     <Routes>
       {/* Login and Register */}
@@ -60,6 +62,7 @@ export default function App() {
     <Router>
       <Box sx={{ display: 'flex' }}>
         <Box component="main" sx={{ flexGrow: 1 }}>
+          <Toaster position="top-right" /> {/* ✅ Add Toaster here */}
           <AppRoutes />
         </Box>
       </Box>

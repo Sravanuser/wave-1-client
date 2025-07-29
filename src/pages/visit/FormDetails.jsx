@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     Box, List, ListItemButton, ListItemText, Accordion, AccordionSummary, AccordionDetails,
     Typography, FormControlLabel, RadioGroup, Radio, Paper, Divider, Button
@@ -10,6 +10,8 @@ import { useParams } from 'react-router-dom';
 
 export default function Forms() {
     const { subjectId } = useParams();
+    const localKeyPrefix = `subject_${subjectId}`;
+
     const formSections = [
         {
             label: 'Screening',
@@ -48,11 +50,38 @@ export default function Forms() {
         ]
     };
 
+    const apiMap = {
+        '1. Date of Visit': 'visit',
+        '2. Eligibility Criteria': 'eligibility',
+        '3. Demographics': 'demographics',
+        '4. Medical and Surgical History': 'medical',
+        '5. Pregnancy Test': 'pregnancy-test',
+    };
+
     const [selectedForm, setSelectedForm] = useState(null);
     const [formValues, setFormValues] = useState({});
+    const [submittedForms, setSubmittedForms] = useState({});
     const [loading, setLoading] = useState(false);
     const [successMessage, setSuccessMessage] = useState('');
     const [errorMessage, setErrorMessage] = useState('');
+
+    // Load saved form and submission states from localStorage
+    useEffect(() => {
+        const savedValues = JSON.parse(localStorage.getItem(`${localKeyPrefix}_formValues`) || '{}');
+        const savedSubmitted = JSON.parse(localStorage.getItem(`${localKeyPrefix}_submittedForms`) || '{}');
+        setFormValues(savedValues);
+        setSubmittedForms(savedSubmitted);
+    }, [subjectId]);
+
+    // Save form values on change
+    useEffect(() => {
+        localStorage.setItem(`${localKeyPrefix}_formValues`, JSON.stringify(formValues));
+    }, [formValues]);
+
+    // Save submitted forms on change
+    useEffect(() => {
+        localStorage.setItem(`${localKeyPrefix}_submittedForms`, JSON.stringify(submittedForms));
+    }, [submittedForms]);
 
     const handleChange = (e) => {
         setFormValues(prev => ({
@@ -62,22 +91,38 @@ export default function Forms() {
     };
 
     const handleSubmit = async () => {
+        if (!selectedForm) return;
+
+        const endpoint = apiMap[selectedForm];
+        if (!endpoint) {
+            setErrorMessage('Invalid form selected');
+            return;
+        }
+
         try {
             setLoading(true);
             setSuccessMessage('');
             setErrorMessage('');
+
             const apiUrl = import.meta.env.VITE_API_URL;
-            const response = await fetch(`${apiUrl}/screenings`, {
+
+            const relevantFields = formSchema[selectedForm].map(f => f.name);
+            const payload = relevantFields.reduce((acc, key) => {
+                if (formValues[key]) acc[key] = formValues[key];
+                return acc;
+            }, { subjectId });
+
+            const response = await fetch(`${apiUrl}/screenings/${endpoint}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ...formValues, subjectId }),
+                body: JSON.stringify(payload),
             });
 
             const data = await response.json();
 
             if (response.ok) {
                 setSuccessMessage('Form submitted successfully!');
-                setFormValues({});
+                setSubmittedForms(prev => ({ ...prev, [selectedForm]: true }));
             } else {
                 setErrorMessage(data.message || 'Failed to submit the form');
             }
@@ -86,6 +131,15 @@ export default function Forms() {
         } finally {
             setLoading(false);
         }
+    };
+
+    const handleReset = () => {
+        localStorage.removeItem(`${localKeyPrefix}_formValues`);
+        localStorage.removeItem(`${localKeyPrefix}_submittedForms`);
+        setFormValues({});
+        setSubmittedForms({});
+        setSuccessMessage('');
+        setErrorMessage('');
     };
 
     return (
@@ -122,11 +176,9 @@ export default function Forms() {
                                             }
                                         }}
                                     >
-                                        {/* Optional: Icon showing progress */}
-                                        {
-                                            formSchema[sub]?.every(f => formValues[f.name]) ?
-                                                <CheckCircleIcon fontSize="small" color="success" sx={{ mr: 1 }} /> :
-                                                <RadioButtonUncheckedIcon fontSize="small" color="disabled" sx={{ mr: 1 }} />
+                                        {submittedForms[sub]
+                                            ? <CheckCircleIcon fontSize="small" color="success" sx={{ mr: 1 }} />
+                                            : <RadioButtonUncheckedIcon fontSize="small" color="disabled" sx={{ mr: 1 }} />
                                         }
                                         <ListItemText primary={sub} />
                                     </ListItemButton>
@@ -135,9 +187,20 @@ export default function Forms() {
                         </AccordionDetails>
                     </Accordion>
                 ))}
+
+                {/* Reset Button */}
+                <Button
+                    variant="outlined"
+                    color="error"
+                    fullWidth
+                    onClick={handleReset}
+                    sx={{ mt: 2 }}
+                >
+                    Reset Subject Data
+                </Button>
             </Box>
 
-            {/* Main Form Area */}
+            {/* Main Form */}
             <Box flex={1} p={4} overflow="auto">
                 {selectedForm ? (
                     <>
@@ -181,12 +244,11 @@ export default function Forms() {
                     <Typography variant="h6" color="text.secondary">Select a form from the left</Typography>
                 )}
 
-                {/* Success/Error Messages */}
-                {successMessage && <Typography variant="body1" color="green">{successMessage}</Typography>}
-                {errorMessage && <Typography variant="body1" color="red">{errorMessage}</Typography>}
+                {successMessage && <Typography color="green" mt={2}>{successMessage}</Typography>}
+                {errorMessage && <Typography color="red" mt={2}>{errorMessage}</Typography>}
             </Box>
 
-            {/* Fixed Submit Button */}
+            {/* Submit Button */}
             <Box
                 sx={{
                     position: 'fixed',
@@ -203,7 +265,7 @@ export default function Forms() {
                     variant="contained"
                     color="primary"
                     onClick={handleSubmit}
-                    disabled={loading}
+                    disabled={loading || !selectedForm}
                     sx={{
                         minWidth: 200,
                         px: 4,
@@ -215,7 +277,6 @@ export default function Forms() {
                     {loading ? 'Submitting...' : 'Submit'}
                 </Button>
             </Box>
-
         </Box>
     );
 }

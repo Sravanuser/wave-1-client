@@ -13,6 +13,7 @@ import {
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import { useParams, useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -52,12 +53,15 @@ const CreateSubjectModal = ({ open, onClose, siteId, onSuccess }) => {
       onSuccess(subject);
       onClose();
       setForm({ name: '', email: '' });
+
+      toast.success('Subject created successfully!'); // ✅ Toast on success
     } catch (err) {
-      alert(err.message);
+      toast.error(err.message);
     } finally {
       setLoading(false);
     }
   };
+
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
@@ -107,7 +111,7 @@ const Subjects = () => {
       const data = await getSubjectsBySite(sitesId);
       setSubjects(data);
     } catch (err) {
-      alert("Failed to load subjects");
+      console.error("Failed to load subjects");
     } finally {
       setLoading(false);
     }
